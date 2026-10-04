@@ -1,32 +1,40 @@
-name: Build Android APK
+name: Build Baddie Runner Android
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-      - master
-  workflow_dispatch:
 
 jobs:
-  build-android:
+  android:
     runs-on: ubuntu-latest
+
+    container:
+      image: barichello/godot-ci:4.7.2
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build Android
-        uses: barichello/godot-ci@v6.1.1
-        with:
-          name: BaddieRunner
-          preset: Android
-          project: .
-          godot_version: 4.5.1
-          archive: true
+      - name: Setup Godot
+        run: |
+          mkdir -p ~/.config
+          mkdir -p ~/.local/share/godot/export_templates
+          cp -r /root/.config/godot ~/.config/ || true
+          cp -r /root/.local/share/godot/export_templates/4.7.2.stable \
+            ~/.local/share/godot/export_templates/ || true
+
+      - name: Build Android APK
+        run: |
+          mkdir -p build
+          godot --headless --verbose \
+            --export-debug "Android" \
+            build/BaddieRunner.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: BaddieRunner-Android
-          path: build/Android/*.apk
+          name: BaddieRunner-APK
+          path: build/BaddieRunner.apk
           if-no-files-found: error
